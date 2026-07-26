@@ -8,7 +8,7 @@ services:
     container_name: interacao-api-container
     restart: always
     ports:
-      - "3000:3009"
+      - "3009:3009"
     environment:
       NODE_ENV: production
-      PORT: 3000
+      PORT: 3009
