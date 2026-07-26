@@ -50,7 +50,7 @@ fastify.post("/api/webhooks/whatsapp", async (request, reply) => {
   //   }
 
   // 3. Agenda o novo job para rodar daqui a 4 segundos
-  await whatsappQueue.add(
+  const job = await whatsappQueue.add(
     "process-buffered-messages",
     { phone },
     {
@@ -58,6 +58,9 @@ fastify.post("/api/webhooks/whatsapp", async (request, reply) => {
       delay: DEBOUNCE_MS,
     },
   );
+
+  console.log(`[Webhook] Agendado job ${job.id} para processar mensagens de ${phone} em ${DEBOUNCE_MS}ms`);
+  console.log(`[Webhook] Job ID: ${jobId}, Phone: ${phone}`);
 
   // TODO: Implement the logic to handle the incoming WhatsApp message, such as buffering it in Redis and scheduling a job to process it after a debounce period.
   return reply.status(200).send({ status: "buffered" });
