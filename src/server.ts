@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import { Queue } from "bullmq";
 import Redis from "ioredis";
+import { startWorker } from "./worker";
 
 export const redisConnection = new Redis({
   host: process.env.REDIS_HOST || "127.0.0.1",
@@ -38,7 +39,17 @@ fastify.post("/api/webhooks/whatsapp", async (request, reply) => {
   // const bufferKey = `wpp:buffer:${phone}`;
   const jobId = `job:debounce:${phone}`;
 
-  
+  // 1. Armazena o objeto da mensagem dentro de uma lista no Redis (expira em 10min por segurança)
+  //   await redisConnection.rpush(bufferKey, JSON.stringify(message));
+  //   await redisConnection.expire(bufferKey, 600);
+
+  // 2. Remove o job pendente anterior (se existir) para "zerar o cronômetro"
+  //   const existingJob = await whatsappQueue.getJob(jobId);
+  //   if (existingJob) {
+  // await existingJob.remove().catch(() => {}); // Ignora se o job já começou a rodar
+  //   }
+
+  // 3. Agenda o novo job para rodar daqui a 4 segundos
   await whatsappQueue.add(
     "process-buffered-messages",
     { phone },
@@ -52,12 +63,30 @@ fastify.post("/api/webhooks/whatsapp", async (request, reply) => {
   return reply.status(200).send({ status: "buffered" });
 });
 
-(async () => {
-  // Run the server!
+async function startApp() {
   try {
+    const worker = await startWorker();
+
+    const shutdown = async (signal: NodeJS.Signals) => {
+      fastify.log.info(`Recebido ${signal}; encerrando aplicação...`);
+      await fastify.close();
+      await worker.close();
+      process.exit(0);
+    };
+
+    process.on("SIGINT", () => {
+      void shutdown("SIGINT");
+    });
+
+    process.on("SIGTERM", () => {
+      void shutdown("SIGTERM");
+    });
+
     await fastify.listen({ host: "0.0.0.0", port });
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
   }
-})();
+}
+
+void startApp();

@@ -10,6 +10,11 @@ export const redisConnection = new Redis({
   // maxRetriesPerRequest: null,
 });
 
+export async function startWorker() {
+  console.log("[worker] pronto para processar jobs");
+  return whatsappWorker;
+}
+
 export const whatsappWorker = new Worker(
   "whatsapp-incoming",
   async (job: Job) => {
