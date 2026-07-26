@@ -1,0 +1,11 @@
+
+@URL_BASE=http://localhost:3000
+
+###
+POST {{URL_BASE}}/api/webhooks/whatsapp
+Content-Type: application/json 
+
+{
+    "message": "Olá, tudo bem?",
+    "phone": "5511999999999"
+}
