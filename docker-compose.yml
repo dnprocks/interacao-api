@@ -1,14 +1,38 @@
-version: "3.9"
-
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: interacao-redis
+    restart: always
+    ports:
+      - "6379:6379"
+
   interacao-api:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: interacao-api-container
     restart: always
+    command: node dist/server.js
+    depends_on:
+      - redis
     ports:
-      - "3009:3009"
+      - "3000:3000"
     environment:
       NODE_ENV: production
-      PORT: 3009
+      PORT: 3000
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+  interacao-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: interacao-worker-container
+    restart: always
+    command: node dist/worker.js
+    depends_on:
+      - redis
+    environment:
+      NODE_ENV: production
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
