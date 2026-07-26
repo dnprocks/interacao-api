@@ -19,7 +19,7 @@ fastify.post("/api/webhooks/whatsapp", async (request, reply) => {
   console.log("Received WhatsApp webhook:", request.body);
 
   const payload = request.body as any;
-  const value = payload?.entry?.[0]?.changes?.[0]?.value;
+  const value = payload?.body?.entry?.[0]?.changes?.[0]?.value;
   const message = value?.messages?.[0];
 
   if (!message) {
