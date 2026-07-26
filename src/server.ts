@@ -36,18 +36,18 @@ fastify.post("/api/webhooks/whatsapp", async (request, reply) => {
   }
 
   const phone = message.from;
-  // const bufferKey = `wpp:buffer:${phone}`;
+  const bufferKey = `wpp:buffer:${phone}`;
   const jobId = `job:debounce:${phone}`;
 
   // 1. Armazena o objeto da mensagem dentro de uma lista no Redis (expira em 10min por segurança)
-  //   await redisConnection.rpush(bufferKey, JSON.stringify(message));
-  //   await redisConnection.expire(bufferKey, 600);
+  await redisConnection.rpush(bufferKey, JSON.stringify(message));
+  await redisConnection.expire(bufferKey, 600);
 
   // 2. Remove o job pendente anterior (se existir) para "zerar o cronômetro"
-  //   const existingJob = await whatsappQueue.getJob(jobId);
-  //   if (existingJob) {
-  // await existingJob.remove().catch(() => {}); // Ignora se o job já começou a rodar
-  //   }
+  const existingJob = await whatsappQueue.getJob(jobId);
+  if (existingJob) {
+    await existingJob.remove().catch(() => {}); // Ignora se o job já começou a rodar
+  }
 
   // 3. Agenda o novo job para rodar daqui a 4 segundos
   const job = await whatsappQueue.add(
@@ -59,7 +59,11 @@ fastify.post("/api/webhooks/whatsapp", async (request, reply) => {
     },
   );
 
-  console.log(`[Webhook] Agendado job ${job.id} para processar mensagens de ${phone} em ${DEBOUNCE_MS}ms`);
+  console.log(await job.getState());
+
+  console.log(
+    `[Webhook] Agendado job ${job.id} para processar mensagens de ${phone} em ${DEBOUNCE_MS}ms`,
+  );
   console.log(`[Webhook] Job ID: ${jobId}, Phone: ${phone}`);
 
   // TODO: Implement the logic to handle the incoming WhatsApp message, such as buffering it in Redis and scheduling a job to process it after a debounce period.

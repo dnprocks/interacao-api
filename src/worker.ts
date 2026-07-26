@@ -18,7 +18,9 @@ export async function startWorker() {
 export const whatsappWorker = new Worker(
   "whatsapp-incoming",
   async (job: Job) => {
-    console.log(`[Job ${job.id}] Iniciando processamento de mensagens para ${job.data.phone}`);
+    console.log(
+      `[Job ${job.id}] Iniciando processamento de mensagens para ${job.data.phone}`,
+    );
     const { phone } = job.data;
     const bufferKey = `wpp:buffer:${phone}`;
 
@@ -86,3 +88,23 @@ async function sendWhatsAppMessage(to: string, text: string) {
   // Envio pra Meta Graph API...
   console.log(`Enviando mensagem para ${to}: ${text}`);
 }
+
+whatsappWorker.on("ready", () => {
+  console.log("Worker ready");
+});
+
+whatsappWorker.on("active", (job) => {
+  console.log("ACTIVE", job.id);
+});
+
+whatsappWorker.on("completed", (job) => {
+  console.log("COMPLETED", job.id);
+});
+
+whatsappWorker.on("failed", (job, err) => {
+  console.error("FAILED", job?.id, err);
+});
+
+whatsappWorker.on("error", (err) => {
+  console.error("WORKER ERROR", err);
+});
