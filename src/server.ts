@@ -2,6 +2,7 @@ import Fastify from "fastify";
 
 const fastify = Fastify({ logger: true });
 const DEBOUNCE_MS = 4000; // 4 segundos de espera para ver se o usuário digita mais algo
+const port = Number(process.env.PORT ?? 3000);
 
 fastify.get("/", async function handler(request, reply) {
   return "alive!";
@@ -22,7 +23,7 @@ fastify.post("/api/webhooks/whatsapp", async (request, reply) => {
 (async () => {
   // Run the server!
   try {
-    await fastify.listen({ port: 3000 });
+    await fastify.listen({ host: "0.0.0.0", port });
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
