@@ -1,14 +1,14 @@
 version: "3.9"
 
 services:
-  api:
+  interacao-api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: interacao-api
+    container_name: interacao-api-container
     restart: always
     ports:
-      - "3000:3000"
+      - "3000:3009"
     environment:
       NODE_ENV: production
       PORT: 3000
