@@ -11,22 +11,55 @@ const fastify = Fastify({ logger: true });
 const DEBOUNCE_MS = 4000; // 4 segundos de espera para ver se o usuário digita mais algo
 const port = Number(process.env.PORT ?? 3000);
 
+function extractWhatsappMessage(payload: any) {
+  const metaValue =
+    payload?.body?.entry?.[0]?.changes?.[0]?.value ??
+    payload?.entry?.[0]?.changes?.[0]?.value;
+
+  const metaMessage = metaValue?.messages?.[0];
+
+  const evolutionMessage =
+    payload?.message ??
+    payload?.messages?.[0] ??
+    payload?.body?.message ??
+    payload?.body?.messages?.[0] ??
+    payload?.payload?.message ??
+    payload?.payload?.messages?.[0] ??
+    payload?.data?.message ??
+    payload?.data?.messages?.[0];
+
+  return metaMessage ?? evolutionMessage;
+}
+
 fastify.get("/", async function handler(request, reply) {
   return "alive!";
 });
+
 
 fastify.post("/api/webhooks/whatsapp", async (request, reply) => {
   console.log("Received WhatsApp webhook:", request.body);
 
   const payload = request.body as any;
-  const value = payload?.body?.entry?.[0]?.changes?.[0]?.value;
-  const message = value?.messages?.[0];
+  const message = extractWhatsappMessage(payload);
 
   if (!message) {
     return reply.status(200).send({ status: "ignored" });
   }
 
-  const phone = message.from;
+  const phone =
+    message?.from ??
+    message?.sender ??
+    message?.from_number ??
+    message?.originator ??
+    message?.contact?.phoneNumber ??
+    message?.contact?.wa_id ??
+    message?.fromWaId ??
+    message?.number;
+
+  if (!phone) {
+    return reply.status(200).send({ status: "ignored" });
+  }
+
   const bufferKey = `wpp:buffer:${phone}`;
   const jobId = `job:debounce:${phone}`;
 
